@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 36 33% 95%;
+    --card: 0 0% 8%;
+    --card-foreground: 36 33% 95%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 36 33% 95%;
+    --primary: 36 63% 58%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 36 33% 95%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 20 78% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 80% 57%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 36 63% 58%;
+    --radius: 0.75rem;
+
+    --gold: #D4A853;
+    --orange: #E8652B;
+    --surface: #141414;
+    --surface-border: #1E1E1E;
+    --text-primary: #F5F0E8;
+    --text-secondary: #6B6B6B;
+    --price-down: #2ECC71;
+    --price-up: #E74C3C;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    background-color: #0A0A0A;
+    color: #F5F0E8;
+    overscroll-behavior: none;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-mono-price {
+  font-family: 'DM Mono', monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+/* Smooth transitions */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area for mobile */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
