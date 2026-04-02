@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
+import ProductImage from '../components/ProductImage';
 import PriceChart from '../components/product/PriceChart';
 import ComparePrices from '../components/product/ComparePrices';
 import SetAlert from '../components/product/SetAlert';
@@ -53,16 +54,18 @@ export default function ProductDetail({ product, onBack }) {
 
       {/* Hero image */}
       <div className="relative" style={{ height: '220px' }}>
-        {imageUrl ? (
-          <img src={imageUrl} alt={product?.name ?? 'Product'}
-            className="w-full h-full object-cover"
-            style={{ borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' }} />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center"
-            style={{ background: '#141414', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' }}>
-            <span style={{ fontSize: '48px' }}>📦</span>
-          </div>
-        )}
+        <ProductImage
+          src={imageUrl}
+          alt={product?.name ?? 'Product'}
+          size="lg"
+          style={{
+            width: '100%',
+            height: '220px',
+            objectFit: 'cover',
+            borderBottomLeftRadius: '24px',
+            borderBottomRightRadius: '24px',
+          }}
+        />
         <div className="absolute inset-0" style={{
           background: 'linear-gradient(to bottom, rgba(10,10,10,0.4) 0%, transparent 40%)',
           borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px',

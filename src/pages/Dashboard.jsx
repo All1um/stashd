@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import ProductImage from '../components/ProductImage';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -78,14 +79,13 @@ function AssetRow({ product, onProductClick }) {
       {/* Thumbnail */}
       <div className="w-11 h-11 rounded-xl flex-shrink-0 overflow-hidden"
         style={{ background: '#1A1A1A' }}>
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name}
-            className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span style={{ fontSize: '18px' }}>📦</span>
-          </div>
-        )}
+        <ProductImage
+          src={product.image_url}
+          alt={product.name}
+          size="sm"
+          className="w-full h-full object-cover"
+          style={{ borderRadius: '10px' }}
+        />
       </div>
 
       {/* Name + store */}
