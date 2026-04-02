@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import ProductImage from '../components/ProductImage';
 import PriceChart from '../components/product/PriceChart';
-import ComparePrices from '../components/product/ComparePrices';
 import SetAlert from '../components/product/SetAlert';
 import { meiFromPrices } from '@/utils/marketLogic';
 import { supabase } from '@/lib/supabase';
