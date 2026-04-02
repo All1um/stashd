@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Link, Bell } from 'lucide-react';
-import { toast } from 'sonner';
+import { toastSuccess, toastInfo } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -87,12 +87,12 @@ export default function AddProductModal({ onClose }) {
     const price = manual ? manualForm.price : preview?.price;
 
     if (!name || !price) {
-      toast.error('Missing info', { description: 'Add a product name and price first.' });
+      toastInfo('Missing info', 'Add a product name and price first.');
       return;
     }
 
     if (!user) {
-      toast.error('Sign in required', { description: 'Create a Stashd account to save products.' });
+      toastInfo('Sign in required', 'Create a Stashd account to save products.');
       return;
     }
 
@@ -117,7 +117,7 @@ export default function AddProductModal({ onClose }) {
 
     if (productError || !productRow) {
       setSaving(false);
-      toast.error('Save failed', { description: productError?.message ?? 'Unknown error' });
+      toastInfo('Could not save', productError?.message ?? 'Unknown error');
       return;
     }
 
@@ -149,10 +149,7 @@ export default function AddProductModal({ onClose }) {
 
     setSaving(false);
 
-    toast.success('Saved to Stashd', {
-      description: name,
-      style: { fontFamily: 'DM Mono, monospace', color: '#D4A853' },
-    });
+    toastSuccess('Saved to Stashd', name);
 
     onClose();
   };
