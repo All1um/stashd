@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
-import ProductImage from '../components/ProductImage';
+import SwipeableGallery from '../components/product/SwipeableGallery';
 import PriceChart from '../components/product/PriceChart';
 import SetAlert from '../components/product/SetAlert';
 import { meiFromPrices } from '@/utils/marketLogic';
@@ -48,32 +48,27 @@ export default function ProductDetail({ product, onBack }) {
     ? meiFromPrices(currentPrice, priceHistory.map(h => h.price))
     : null;
 
+  // images[] — use product.images if available, otherwise fall back to single imageUrl
+  const galleryImages = Array.isArray(product?.images) && product.images.length > 0
+    ? product.images
+    : [];
+
   return (
     <div className="min-h-screen pb-32" style={{ background: '#0A0A0A' }}>
 
-      {/* Hero image */}
+      {/* Hero — swipeable gallery */}
       <div className="relative" style={{ height: '220px' }}>
-        <ProductImage
-          src={imageUrl}
+        <SwipeableGallery
+          images={galleryImages}
+          fallbackSrc={imageUrl}
           alt={product?.name ?? 'Product'}
-          size="lg"
-          style={{
-            width: '100%',
-            height: '220px',
-            objectFit: 'cover',
-            borderBottomLeftRadius: '24px',
-            borderBottomRightRadius: '24px',
-          }}
+          height={220}
         />
-        <div className="absolute inset-0" style={{
-          background: 'linear-gradient(to bottom, rgba(10,10,10,0.4) 0%, transparent 40%)',
-          borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px',
-        }} />
         <button
           type="button"
           onClick={onBack}
           className="absolute top-4 left-4 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-sm"
-          style={{ background: 'rgba(10,10,10,0.6)', marginTop: 'max(4px, env(safe-area-inset-top, 4px))' }}
+          style={{ background: 'rgba(10,10,10,0.6)', marginTop: 'max(4px, env(safe-area-inset-top, 4px))', zIndex: 10 }}
         >
           <ArrowLeft size={18} color="#F5F0E8" />
         </button>

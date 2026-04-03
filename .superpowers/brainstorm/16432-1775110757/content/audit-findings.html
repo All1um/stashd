@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stashd v1.2.0 — Visual Intelligence Audit</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0A0A0A;
+    color: #F5F0E8;
+    font-family: 'Inter', -apple-system, sans-serif;
+    padding: 32px 24px 80px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .wordmark {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: #D4A853;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #F5F0E8;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #6B6B6B;
+    margin-bottom: 40px;
+  }
+  .section {
+    margin-bottom: 40px;
+  }
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: #6B6B6B;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #1E1E1E;
+    padding-bottom: 8px;
+  }
+  .audit-card {
+    background: #141414;
+    border: 1px solid #1E1E1E;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .audit-card.ok    { border-left: 3px solid #2ECC71; }
+  .audit-card.warn  { border-left: 3px solid #D4A853; }
+  .audit-card.fix   { border-left: 3px solid #E8652B; }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #F5F0E8;
+  }
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+  .badge-ok   { background: rgba(46,204,113,0.12); color: #2ECC71; }
+  .badge-warn { background: rgba(212,168,83,0.12);  color: #D4A853; }
+  .badge-fix  { background: rgba(232,101,43,0.12); color: #E8652B; }
+  .card-body {
+    font-size: 13px;
+    color: #6B6B6B;
+    line-height: 1.7;
+  }
+  .card-body code {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: #1E1E1E;
+    color: #D4A853;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .card-body strong { color: #F5F0E8; }
+
+  /* Chart mockup */
+  .chart-demo {
+    background: #141414;
+    border: 1px solid #1E1E1E;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .chart-title { font-family: Georgia, serif; font-size: 15px; font-weight: 600; }
+  .range-pills { display: flex; gap: 4px; }
+  .pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    cursor: pointer;
+  }
+  .pill.active { background: #D4A853; color: #0A0A0A; }
+  .pill.inactive { background: #1E1E1E; color: #6B6B6B; }
+
+  .chart-area {
+    position: relative;
+    height: 140px;
+    overflow: hidden;
+  }
+  .chart-svg { width: 100%; height: 100%; }
+
+  /* Toast mockups */
+  .toast-demo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .toast {
+    background: #141414;
+    border: 1px solid #1E1E1E;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 340px;
+  }
+  .toast-icon {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #D4A853;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .toast-content {}
+  .toast-title { font-size: 13px; font-weight: 600; color: #F5F0E8; margin-bottom: 2px; }
+  .toast-desc { font-family: 'DM Mono', monospace; font-size: 11px; color: #D4A853; }
+
+  /* Image placeholder mockups */
+  .placeholder-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .placeholder-option {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #1E1E1E;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .placeholder-option:hover { border-color: #D4A853; }
+  .placeholder-option.selected { border-color: #D4A853; box-shadow: 0 0 0 1px #D4A853; }
+  .ph-label {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: #6B6B6B;
+    text-align: center;
+    padding: 8px;
+    background: #0A0A0A;
+    letter-spacing: 0.06em;
+  }
+
+  /* BottomNav diagnosis */
+  .nav-demo {
+    position: relative;
+    background: #0D0D0D;
+    border-top: 1px solid #1E1E1E;
+    border-radius: 0 0 16px 16px;
+    height: 72px;
+    margin-top: 16px;
+    overflow: visible;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    padding: 0 8px 10px;
+  }
+  .nav-tab { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .nav-icon { width: 22px; height: 22px; background: #1E1E1E; border-radius: 4px; }
+  .nav-icon.active { background: #D4A853; }
+  .nav-label { font-size: 9px; font-family: 'DM Mono', monospace; color: #6B6B6B; }
+  .nav-label.active { color: #D4A853; }
+  .fab {
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #E8652B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 24px rgba(232,101,43,0.5), 0 0 0 4px #0D0D0D;
+  }
+  .nav-spacer { width: 56px; flex-shrink: 0; }
+  .nav-container-demo {
+    background: #141414;
+    border: 1px solid #1E1E1E;
+    border-radius: 16px;
+    padding: 16px;
+    overflow: visible;
+    margin-top: 16px;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } .placeholder-grid { grid-template-columns: 1fr 1fr; } }
+
+  .recommend-bar {
+    background: rgba(212,168,83,0.06);
+    border: 1px solid rgba(212,168,83,0.2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #D4A853;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.6;
+  }
+
+  .divider { border: none; border-top: 1px solid #1E1E1E; margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<div class="wordmark">STASHD · v1.2.0 AUDIT</div>
+<h1>Visual Intelligence Report</h1>
+<p class="subtitle">Engineering audit across all four deficit zones — findings, root causes, and proposed fixes.</p>
+
+<!-- ═══ DEFICIT 1: DASHBOARD ═══ -->
+<div class="section">
+  <div class="section-label">DEFICIT 01 · DASHBOARD AGGREGATES</div>
+
+  <div class="audit-card ok">
+    <div class="card-header">
+      <span class="card-title">Portfolio Value &amp; Total Savings</span>
+      <span class="badge badge-ok">REAL-TIME ✓</span>
+    </div>
+    <div class="card-body">
+      Both stats are already computed live from the <code>products</code> array fetched from Supabase on mount.
+      <code>portfolioValue</code> = sum of <code>current_price</code>; <code>totalSavings</code> = sum of
+      positive <code>(original_price − current_price)</code> deltas. No hardcoded integers found.
+    </div>
+  </div>
+
+  <div class="audit-card warn">
+    <div class="card-header">
+      <span class="card-title">Active Alerts Count</span>
+      <span class="badge badge-warn">MISSING STAT</span>
+    </div>
+    <div class="card-body">
+      The stats grid has 4 tiles: POSITIONS, PORTFOLIO, PRICE DROPS, TOTAL SAVINGS. There is no
+      <strong>ACTIVE ALERTS</strong> tile. <code>price_alerts</code> is never queried on the Dashboard —
+      the BottomNav badge count lives in <code>StashdApp.jsx</code> but a dashboard tile would close the loop.
+      <br><br>
+      <strong>Fix:</strong> Add a 5th stat pulled from <code>price_alerts</code> count query, or replace
+      the least useful tile (PRICE DROPS overlaps with TOTAL SAVINGS). Recommendation: keep 4 tiles, replace
+      PRICE DROPS with <strong>ALERTS ACTIVE</strong> using gold accent color.
+    </div>
+  </div>
+
+  <div class="audit-card ok">
+    <div class="card-header">
+      <span class="card-title">POSITIONS &amp; PRICE DROPS</span>
+      <span class="badge badge-ok">REAL-TIME ✓</span>
+    </div>
+    <div class="card-body">
+      Derived from <code>products.length</code> and filter on <code>current_price &lt; original_price</code>.
+      No changes needed.
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══ DEFICIT 2: PRICE CHART ═══ -->
+<div class="section">
+  <div class="section-label">DEFICIT 02 · TREND VISUALIZATION · LIBRARY RECOMMENDATION</div>
+
+  <div class="audit-card ok">
+    <div class="card-header">
+      <span class="card-title">Recharts — Already Installed</span>
+      <span class="badge badge-ok">RECOMMENDED ✓</span>
+    </div>
+    <div class="card-body">
+      <strong>Recharts v2.15.4</strong> is already in <code>package.json</code> and <code>PriceChart.jsx</code>
+      already uses <code>LineChart</code>, <code>Line</code>, <code>ResponsiveContainer</code>,
+      <code>Tooltip</code>, <code>YAxis</code>. The gold palette, dark tooltip, and 30/60/90d toggle are
+      all implemented. Zero install cost.
+      <br><br>
+      <strong>Why not Victory or Chart.js?</strong> Victory adds 80 kB for no gain over Recharts' already-used
+      primitives. Chart.js requires Canvas and manual theming. Recharts is React-native, tree-shakeable, and
+      the chart shell is already production-quality.
+    </div>
+  </div>
+
+  <div class="audit-card fix">
+    <div class="card-header">
+      <span class="card-title">Root Cause — Chart shows nothing</span>
+      <span class="badge badge-fix">DATA PIPE BROKEN</span>
+    </div>
+    <div class="card-body">
+      <code>ProductDetail.jsx</code> line 15: <code>const priceHistory = product?.priceHistory ?? null</code><br>
+      The prop <code>priceHistory</code> is <strong>never populated</strong> — it's a camelCase key that no
+      Supabase query ever sets. The <code>PriceChart</code> component is gated behind
+      <code>{priceHistory && &lt;PriceChart /&gt;}</code>, so it never renders.
+      <br><br>
+      <strong>Fix:</strong> In <code>ProductDetail</code>, <code>useEffect</code> on mount to query
+      <code>price_history</code> table by <code>product.id</code>, ordered <code>checked_at ASC</code>.
+      Map rows to <code>{ date: row.checked_at, price: row.price }</code>. Pass to
+      <code>PriceChart</code>. Also seed a history row on every <strong>product save</strong>
+      (INSERT into <code>price_history</code> with the scrape price) so new products always have at
+      least one data point.
+      <br><br>
+      <strong>PriceChart fix:</strong> Currently maps <code>(price, i) =&gt; ({ day: i+1, price })</code>
+      — loses <code>checked_at</code> dates. Update to use real dates on X-axis with
+      <code>XAxis dataKey="date"</code> and a date formatter tick, or keep day index but display the
+      date in the tooltip.
+    </div>
+  </div>
+
+  <!-- Chart preview mockup -->
+  <div class="chart-demo">
+    <div class="chart-header">
+      <span class="chart-title" style="font-family:Georgia,serif">Price History</span>
+      <div class="range-pills">
+        <span class="pill active">30d</span>
+        <span class="pill inactive">60d</span>
+        <span class="pill inactive">90d</span>
+      </div>
+    </div>
+    <div class="chart-area">
+      <svg class="chart-svg" viewBox="0 0 400 140" preserveAspectRatio="none">
+        <!-- grid lines -->
+        <line x1="0" y1="35" x2="400" y2="35" stroke="#1A1A1A" stroke-width="1"/>
+        <line x1="0" y1="70" x2="400" y2="70" stroke="#1A1A1A" stroke-width="1"/>
+        <line x1="0" y1="105" x2="400" y2="105" stroke="#1A1A1A" stroke-width="1"/>
+        <!-- gold gradient fill -->
+        <defs>
+          <linearGradient id="goldFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#D4A853" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#D4A853" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- area fill -->
+        <path d="M0,95 C40,90 60,80 100,70 C130,62 150,75 200,68 C240,62 260,45 300,42 C340,38 370,30 400,25 L400,140 L0,140 Z"
+          fill="url(#goldFill)"/>
+        <!-- gold line -->
+        <path d="M0,95 C40,90 60,80 100,70 C130,62 150,75 200,68 C240,62 260,45 300,42 C340,38 370,30 400,25"
+          fill="none" stroke="#D4A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- active dot -->
+        <circle cx="400" cy="25" r="4" fill="#D4A853"/>
+        <!-- tooltip mock -->
+        <rect x="310" y="4" width="80" height="30" rx="8" fill="#1E1E1E" stroke="#2E2E2E"/>
+        <text x="350" y="24" text-anchor="middle" font-family="'DM Mono',monospace" font-size="11" fill="#D4A853">$329.99</text>
+      </svg>
+    </div>
+    <p style="font-family:'DM Mono',monospace;font-size:10px;color:#6B6B6B;margin-top:10px;letter-spacing:0.06em">
+      PROPOSED: area fill + gold line + date tooltip · data from price_history table
+    </p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══ DEFICIT 3: TOAST FEEDBACK ═══ -->
+<div class="section">
+  <div class="section-label">DEFICIT 03 · PREMIUM FEEDBACK AUDIT</div>
+
+  <div class="audit-card warn">
+    <div class="card-header">
+      <span class="card-title">Inconsistent Toast Usage</span>
+      <span class="badge badge-warn">NEEDS STANDARDISATION</span>
+    </div>
+    <div class="card-body">
+      Sonner is installed. Usage is inconsistent across files:
+      <br><br>
+      • <strong>AddProductModal:</strong> Uses <code>toast.success()</code> / <code>toast.error()</code> — correct
+      but no gold style on success. Error uses red (violates "No Red" rule for feedback).<br>
+      • <strong>SetAlert:</strong> Uses bare <code>toast()</code> with inline <code>style</code> — gold DM Mono
+      applied manually each time. Not reusable.<br>
+      • <strong>Lists.jsx:</strong> No toast on list create or rename — silent operations.<br>
+      • <strong>ListDetail / Alerts:</strong> No toast on any operation.
+      <br><br>
+      <strong>Fix:</strong> Create a <code>src/lib/toast.js</code> helper that exports
+      <code>toastSuccess(title, desc)</code> and <code>toastInfo(title, desc)</code> — both using
+      consistent gold styling. Replace all raw <code>toast()</code> calls. Remove all red error toasts;
+      use gold info toasts instead (e.g. "Sign in to set alerts" stays gold).
+    </div>
+  </div>
+
+  <!-- Toast designs -->
+  <div class="toast-demo">
+    <div class="toast">
+      <div class="toast-icon"></div>
+      <div class="toast-content">
+        <div class="toast-title">Saved to Stashd</div>
+        <div class="toast-desc">Sony WH-1000XM5 · $329.99</div>
+      </div>
+    </div>
+    <div class="toast">
+      <div class="toast-icon"></div>
+      <div class="toast-content">
+        <div class="toast-title">List updated</div>
+        <div class="toast-desc">Tech Wishlist · renamed</div>
+      </div>
+    </div>
+    <div class="toast">
+      <div class="toast-icon"></div>
+      <div class="toast-content">
+        <div class="toast-title">Alert set</div>
+        <div class="toast-desc">Notify when ↓ $299.00</div>
+      </div>
+    </div>
+  </div>
+  <p style="font-family:'DM Mono',monospace;font-size:10px;color:#6B6B6B;margin-top:10px;letter-spacing:0.06em">
+    PROPOSED: all toasts · gold #D4A853 accent · DM Mono desc · no red anywhere
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- ═══ DEFICIT 4: IMAGE RESILIENCE ═══ -->
+<div class="section">
+  <div class="section-label">DEFICIT 04 · IMAGE RESILIENCE &amp; PLACEHOLDER DESIGN</div>
+
+  <div class="audit-card warn">
+    <div class="card-header">
+      <span class="card-title">Scraper — image_url Reliability</span>
+      <span class="badge badge-warn">HOTLINK RISK</span>
+    </div>
+    <div class="card-body">
+      <strong>Root cause:</strong> Gemini extracts <code>image_url</code> from raw HTML. For retailers like
+      Amazon, Best Buy, and Walmart, the extracted URL is the CDN image URL — valid when scraped but often
+      blocked for cross-origin display due to <code>Referer</code> checks or signed URL expiry.
+      <br><br>
+      <strong>Current fallback:</strong> All placeholder uses are the 📦 emoji in a dark div. Not brand-aligned.
+      <br><br>
+      <strong>Fix:</strong> Replace 📦 emoji placeholders across
+      <code>Dashboard</code>, <code>ListDetail</code>, <code>Alerts</code>, and <code>ProductDetail</code>
+      with a premium SVG placeholder: dark <code>#141414</code> background, gold "S" monogram or wordmark,
+      subtle radial glow. Add <code>onError</code> handler on every <code>&lt;img&gt;</code> tag to swap
+      to placeholder on load failure.
+    </div>
+  </div>
+
+  <!-- Placeholder options -->
+  <div class="placeholder-grid">
+    <!-- Option A: S monogram -->
+    <div class="placeholder-option selected" data-choice="a" onclick="this.classList.toggle('selected')">
+      <div style="background:#141414;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px">
+        <div style="width:42px;height:42px;border-radius:50%;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:Georgia,serif;font-size:20px;color:#D4A853;font-weight:700">S</span>
+        </div>
+        <span style="font-family:'DM Mono',monospace;font-size:8px;color:#6B6B6B;letter-spacing:0.15em">STASHD</span>
+      </div>
+      <div class="ph-label">A · S MONOGRAM</div>
+    </div>
+    <!-- Option B: icon + text -->
+    <div class="placeholder-option" data-choice="b" onclick="this.classList.toggle('selected')">
+      <div style="background:#141414;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="opacity:0.3">
+          <rect x="3" y="6" width="22" height="17" rx="3" stroke="#D4A853" stroke-width="1.5"/>
+          <circle cx="14" cy="14" r="4" stroke="#D4A853" stroke-width="1.5"/>
+          <circle cx="21" cy="9" r="1.5" fill="#D4A853"/>
+        </svg>
+        <span style="font-family:'DM Mono',monospace;font-size:8px;color:#6B6B6B;letter-spacing:0.1em">NO IMAGE</span>
+      </div>
+      <div class="ph-label">B · ICON</div>
+    </div>
+    <!-- Option C: gradient tile -->
+    <div class="placeholder-option" data-choice="c" onclick="this.classList.toggle('selected')">
+      <div style="background:linear-gradient(135deg,#141414 0%,#1A1410 100%);height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px;border-bottom:1px solid #1E1E1E">
+        <div style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:#1E1E1E;letter-spacing:-0.02em;text-shadow:0 1px 0 #2A2A2A">STASHD</div>
+        <div style="width:24px;height:1px;background:rgba(212,168,83,0.3)"></div>
+      </div>
+      <div class="ph-label">C · EMBOSSED</div>
+    </div>
+  </div>
+  <p style="font-family:'DM Mono',monospace;font-size:10px;color:#6B6B6B;margin-top:10px;letter-spacing:0.06em">
+    CLICK TO SELECT · all options use #141414 bg · <code>onError</code> swap on img load failure
+  </p>
+</div>
+
+<hr class="divider">
+
+<!-- ═══ BOTTOMNAV DIAGNOSIS ═══ -->
+<div class="section">
+  <div class="section-label">BOTTOMNAV · CSS WEIRDNESS ROOT CAUSE</div>
+
+  <div class="audit-card warn">
+    <div class="card-header">
+      <span class="card-title">FAB clipping &amp; tap-target overlap</span>
+      <span class="badge badge-warn">2 ROOT CAUSES</span>
+    </div>
+    <div class="card-body">
+      <strong>Issue 1 — Backdrop blur / stacking context:</strong> When any parent element has
+      <code>transform</code>, <code>filter</code>, <code>backdrop-filter</code>, or <code>will-change</code>,
+      it creates a new stacking context that traps <code>position:absolute</code> children. The FAB is
+      <code>position:absolute</code> inside a <code>position:fixed</code> nav — this works in most cases
+      but the <code>box-shadow: 0 0 0 4px #0D0D0D</code> ring can be clipped by adjacent
+      <code>overflow:hidden</code> on scrollable page containers.
+      <br><br>
+      <strong>Issue 2 — FAB tap dead zone:</strong> The FAB protrudes <code>28px</code> above the nav bar
+      into the page scroll area. Touches in that 28px zone land on the scroll layer, not the FAB button.
+      Since the nav is <code>position:fixed</code> and the page content has its own scroll container
+      (<code>overflow-y:auto; height:100vh</code>), pointer events from the page layer intercept FAB
+      taps in the protruding region.
+      <br><br>
+      <strong>Fix:</strong>
+      Add <code>pointer-events: none</code> to the page scroll containers' bottom padding area (the
+      <code>pb-40</code> / <code>pb-32</code> zones are already there to prevent content hiding).
+      The real fix is ensuring the nav's <code>z-index:40</code> and FAB's <code>z-index:50</code>
+      exceed any page scroll container z-index. Also: the <code>overflow: visible</code> on the
+      fixed nav is correct and necessary — confirm no ancestor element is resetting it.
+    </div>
+  </div>
+
+  <!-- Nav demo -->
+  <div class="nav-container-demo">
+    <p style="font-family:'DM Mono',monospace;font-size:9px;color:#6B6B6B;letter-spacing:0.12em;margin-bottom:12px">LIVE DEMO · FAB WITH CORRECT OVERFLOW</p>
+    <div style="position:relative;background:#1A1A1A;border-radius:8px;height:60px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;">
+      <p style="font-family:'DM Mono',monospace;font-size:10px;color:#2A2A2A">PAGE SCROLL AREA</p>
+    </div>
+    <div style="position:relative;background:#0D0D0D;border-top:1px solid #1E1E1E;border-radius:0 0 8px 8px;height:64px;overflow:visible;display:flex;align-items:flex-end;justify-content:space-around;padding:0 8px 10px;">
+      <!-- FAB -->
+      <div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;background:#E8652B;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(232,101,43,0.5),0 0 0 4px #0D0D0D;font-size:22px;z-index:10;">+</div>
+      <!-- left tabs -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:2px">
+        <div style="width:20px;height:20px;background:#D4A853;border-radius:4px"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:#D4A853">ASSETS</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:2px">
+        <div style="width:20px;height:20px;background:#1E1E1E;border-radius:4px"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:#6B6B6B">LISTS</div>
+      </div>
+      <!-- spacer -->
+      <div style="width:56px;flex-shrink:0"></div>
+      <!-- right tabs -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:2px">
+        <div style="width:20px;height:20px;background:#1E1E1E;border-radius:4px"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:#6B6B6B">DISCOVER</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:2px">
+        <div style="width:20px;height:20px;background:#1E1E1E;border-radius:4px"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:#6B6B6B">ALERTS</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:2px">
+        <div style="width:20px;height:20px;background:#1E1E1E;border-radius:4px"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:#6B6B6B">PROFILE</div>
+      </div>
+    </div>
+    <p style="font-family:'DM Mono',monospace;font-size:9px;color:#6B6B6B;letter-spacing:0.06em;margin-top:8px">
+      overflow:visible on nav · z-index:50 on FAB · z-index:40 on nav · spacer div holds footprint
+    </p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══ IMPLEMENTATION SUMMARY ═══ -->
+<div class="section">
+  <div class="section-label">IMPLEMENTATION PLAN · 5 TASKS</div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="background:#141414;border:1px solid #1E1E1E;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#D4A853;min-width:24px">01</span>
+      <span style="font-size:13px;color:#F5F0E8">Dashboard — replace PRICE DROPS tile with ALERTS ACTIVE (query <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">price_alerts</code>)</span>
+    </div>
+    <div style="background:#141414;border:1px solid #1E1E1E;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#D4A853;min-width:24px">02</span>
+      <span style="font-size:13px;color:#F5F0E8">ProductDetail — <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">useEffect</code> fetch <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">price_history</code> · seed row on save · area fill in chart</span>
+    </div>
+    <div style="background:#141414;border:1px solid #1E1E1E;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#D4A853;min-width:24px">03</span>
+      <span style="font-size:13px;color:#F5F0E8">Create <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">src/lib/toast.js</code> · <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">toastSuccess()</code> + <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">toastInfo()</code> · replace all raw calls</span>
+    </div>
+    <div style="background:#141414;border:1px solid #1E1E1E;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#D4A853;min-width:24px">04</span>
+      <span style="font-size:13px;color:#F5F0E8">Image resilience — <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">StashdPlaceholder</code> SVG component · <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">onError</code> on all img tags</span>
+    </div>
+    <div style="background:#141414;border:1px solid #1E1E1E;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#D4A853;min-width:24px">05</span>
+      <span style="font-size:13px;color:#F5F0E8">BottomNav — audit z-index stack · confirm <code style="font-size:10px;background:#1E1E1E;padding:1px 5px;border-radius:3px;color:#D4A853">overflow:visible</code> not reset by any ancestor</span>
+    </div>
+  </div>
+</div>
+
+<div class="recommend-bar">
+  ✦ CHART LIBRARY VERDICT: Keep Recharts v2.15.4 — already installed, already used, gold palette already configured. Zero migration cost. Add gradient area fill to PriceChart for premium feel.
+</div>
+
+</body>
+</html>

@@ -1,39 +1,37 @@
-**Welcome to your Base44 project** 
+# Stashd
 
-**About**
+**Universal Wisdom for Smart Shopping.**
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+Save products from any online store, track price changes automatically, compare prices across retailers, and buy at the best price.
 
-This project contains everything you need to run your app locally.
+## Stack
 
-**Edit the code in your local development environment**
+- **Frontend:** Vite + React 18 (JSX)
+- **Backend:** Supabase (Postgres + Auth + Edge Functions)
+- **AI:** Gemini 1.5 Flash (product extraction + regional advice)
+- **Search:** SerpAPI Google Shopping (geo-aware)
+- **Styling:** Tailwind CSS + DM Mono / Playfair Display / Inter
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+## Setup
 
-**Prerequisites:** 
-
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create `.env.local`:
 
 ```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-Run the app: `npm run dev`
+4. Run the Supabase migrations in `docs/supabase/`
+5. Deploy Edge Functions: `supabase functions deploy`
+6. Start dev server: `npm run dev`
 
-**Publish your changes**
+## Commands
 
-Open [Base44.com](http://Base44.com) and click on Publish.
-
-**Docs & Support**
-
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
-
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+```bash
+npm run dev       # Start dev server
+npm run build     # Production build
+npm run lint      # Lint check
+npm run lint:fix  # Auto-fix lint errors
+```

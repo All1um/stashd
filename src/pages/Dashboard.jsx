@@ -154,7 +154,7 @@ export default function Dashboard({ onProductClick, onNavigate }) {
       setProducts(productsData ?? []);
       setAlertsActive(count ?? 0);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [user]);
 
   // ── Computed stats ──────────────────────────────────────

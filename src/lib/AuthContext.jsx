@@ -1,135 +1,148 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
-import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+
+const DEFAULT_PROFILE = {
+  country_code: 'CA',
+  region:       'British Columbia',
+  currency:     'CAD',
+  display_name: null,
+};
 
 const AuthContext = createContext();
 
+// ── OAuth URL cleanup ──────────────────────────────────────
+function cleanOAuthFragment() {
+  if (
+    window.location.hash.includes('access_token') ||
+    window.location.hash.includes('refresh_token') ||
+    window.location.hash.includes('error_description')
+  ) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
+// ── Geo helpers ────────────────────────────────────────────
+
+async function detectLocation() {
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (!res.ok) return null;
+    const geo = await res.json();
+    if (geo.error) return null;
+    return {
+      country_code: (geo.country_code ?? 'CA').toUpperCase(),
+      region:       geo.region       ?? 'British Columbia',
+      currency:     geo.currency     ?? 'CAD',
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ── Provider ───────────────────────────────────────────────
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user,            setUser]            = useState(null);
+  const [profile,         setProfile]         = useState(DEFAULT_PROFILE);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
-  const [authError, setAuthError] = useState(null);
-  const [appPublicSettings, setAppPublicSettings] = useState(null);
+  const [isLoadingAuth,   setIsLoadingAuth]   = useState(true);
+
+  // Load existing profile from DB
+  const loadProfile = async (authUser) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('country_code, region, currency, display_name')
+      .eq('id', authUser.id)
+      .maybeSingle();
+
+    setProfile(data ?? DEFAULT_PROFILE);
+    return data;
+  };
+
+  // Create profile — only called for genuine new sign-ups
+  const createNewProfile = async (authUser) => {
+    const geo      = await detectLocation();
+    const location = geo ?? DEFAULT_PROFILE;
+
+    const { data } = await supabase
+      .from('profiles')
+      .upsert({
+        id:           authUser.id,
+        email:        authUser.email,
+        display_name: authUser.user_metadata?.full_name ?? authUser.user_metadata?.name ?? null,
+        country_code: location.country_code,
+        region:       location.region,
+        currency:     location.currency,
+      }, { onConflict: 'id' })
+      .select('country_code, region, currency, display_name')
+      .maybeSingle();
+
+    setProfile(data ?? location);
+  };
 
   useEffect(() => {
-    checkAppState();
+    cleanOAuthFragment();
+
+    // Safety valve: if getSession takes >3s (slow network), unblock the UI.
+    // 3s instead of 1.5s to reduce false positive AuthScreen flashes.
+    const safetyTimer = setTimeout(() => setIsLoadingAuth(false), 3000);
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      clearTimeout(safetyTimer);
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session);
+      if (session?.user) await loadProfile(session.user);
+      setIsLoadingAuth(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        cleanOAuthFragment();
+        // Only run geo + upsert for genuinely new accounts.
+        // Session restores (page refresh) also fire SIGNED_IN — distinguish them
+        // by checking if a profile row already exists.
+        const existing = await loadProfile(session.user);
+        if (!existing) {
+          await createNewProfile(session.user);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(DEFAULT_PROFILE);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const checkAppState = async () => {
-    try {
-      setIsLoadingPublicSettings(true);
-      setAuthError(null);
+  const signInWithGoogle = () =>
+    supabase.auth.signInWithOAuth({ provider: 'google' });
 
-      const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
-        headers: {
-          'X-App-Id': appParams.appId
-        },
-        token: appParams.token,
-        interceptResponses: true
-      });
-
-      try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
-
-        if (appParams.token) {
-          await checkUserAuth();
-        } else {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(false);
-        }
-        setIsLoadingPublicSettings(false);
-      } catch (appError) {
-        console.error('App state check failed:', appError);
-
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
-        }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
-    }
+  const signInWithEmail = async (email, password) => {
+    const result = await supabase.auth.signInWithPassword({ email, password });
+    if (!result.error && result.data.user) await loadProfile(result.data.user);
+    return result;
   };
 
-  const checkUserAuth = async () => {
-    try {
-      setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-      setIsLoadingAuth(false);
-    } catch (error) {
-      console.error('User auth check failed:', error);
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
-
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
-    }
+  const signUpWithEmail = async (email, password) => {
+    const result = await supabase.auth.signUp({ email, password });
+    if (!result.error && result.data.user) await createNewProfile(result.data.user);
+    return result;
   };
 
-  const logout = (shouldRedirect = true) => {
-    setUser(null);
-    setIsAuthenticated(false);
-
-    if (shouldRedirect) {
-      base44.auth.logout(window.location.href);
-    } else {
-      base44.auth.logout();
-    }
-  };
-
-  const navigateToLogin = () => {
-    base44.auth.redirectToLogin(window.location.href);
-  };
+  const logout = () => supabase.auth.signOut();
 
   return (
     <AuthContext.Provider value={{
       user,
+      profile,
       isAuthenticated,
       isLoadingAuth,
-      isLoadingPublicSettings,
-      authError,
-      appPublicSettings,
+      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
       logout,
-      navigateToLogin,
-      checkAppState
     }}>
       {children}
     </AuthContext.Provider>
@@ -138,8 +151,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

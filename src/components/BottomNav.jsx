@@ -59,7 +59,7 @@ export default function BottomNav({ activeTab, setActiveTab, alertCount }) {
         bottom:        0,
         left:          0,
         right:         0,
-        zIndex:        40,
+        zIndex:        1000,
         overflow:      'visible',          /* REQUIRED: lets FAB protrude above the bar */
         background:    '#0D0D0D',
         borderTop:     '1px solid #1E1E1E',
@@ -76,7 +76,7 @@ export default function BottomNav({ activeTab, setActiveTab, alertCount }) {
           left:           '50%',
           transform:      'translateX(-50%)',
           top:            '-28px',
-          zIndex:         50,
+          zIndex:         1001,
           width:          '56px',
           height:         '56px',
           borderRadius:   '50%',
@@ -92,8 +92,8 @@ export default function BottomNav({ activeTab, setActiveTab, alertCount }) {
         <Plus size={24} color="white" strokeWidth={2.5} />
       </button>
 
-      {/* ── Tab row — spacer in center holds FAB footprint ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', paddingLeft: '8px', paddingRight: '8px' }}>
+      {/* ── Tab row — 6-column grid: 2 left | FAB spacer | 3 right ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 72px 1fr 1fr 1fr', alignItems: 'end', paddingLeft: '8px', paddingRight: '8px' }}>
         {LEFT_TABS.map(tab => (
           <NavTab
             key={tab.id}
@@ -104,8 +104,8 @@ export default function BottomNav({ activeTab, setActiveTab, alertCount }) {
           />
         ))}
 
-        {/* Spacer for FAB */}
-        <div style={{ width: '56px', flexShrink: 0 }} />
+        {/* Spacer for FAB — fixed 72px center column */}
+        <div />
 
         {RIGHT_TABS.map(tab => (
           <NavTab

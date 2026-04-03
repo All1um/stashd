@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
-import { toastSuccess, toastInfo } from '@/lib/toast';
+import { toastInfo } from '@/lib/toast';
 import { meiFromPrices } from '@/utils/marketLogic';
 
 // ── Gold spinner ──────────────────────────────────────────
@@ -94,42 +94,78 @@ function MEIBadge({ mei }) {
 
 // ── Product result card ───────────────────────────────────
 
-function ProductCard({ result, currency, onSave }) {
+function ProductCard({ result, currency, onStash }) {
   const [imgError, setImgError] = useState(false);
+  const cardUrl = result.product_url || result.link || null;
 
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col"
       style={{ background: '#141414', border: '1px solid #1E1E1E' }}>
 
-      {/* Image */}
-      <div className="relative" style={{ paddingTop: '100%', background: '#1E1E1E' }}>
-        {!imgError && result.image_url ? (
-          <img
-            src={result.image_url}
-            alt={result.title}
-            onError={() => setImgError(true)}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Search size={24} color="#2E2E2E" />
-          </div>
-        )}
-
-        {result.is_best && (
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full"
-            style={{
-              background: 'rgba(46,204,113,0.15)',
-              border: '1px solid #2ECC71',
-              color: '#2ECC71',
-              fontSize: '9px',
-              fontFamily: 'DM Mono, monospace',
-              letterSpacing: '0.08em',
-            }}>
-            BEST
-          </span>
-        )}
-      </div>
+      {/* Image — clickable link to product page */}
+      {cardUrl ? (
+        <a
+          href={cardUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative block transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          style={{ paddingTop: '100%', background: '#1E1E1E', display: 'block' }}
+        >
+          {!imgError && result.image_url ? (
+            <img
+              src={result.image_url}
+              alt={result.title}
+              onError={() => setImgError(true)}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Search size={24} color="#2E2E2E" />
+            </div>
+          )}
+          {result.is_best && (
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full"
+              style={{
+                background: 'rgba(46,204,113,0.15)',
+                border: '1px solid #2ECC71',
+                color: '#2ECC71',
+                fontSize: '9px',
+                fontFamily: 'DM Mono, monospace',
+                letterSpacing: '0.08em',
+              }}>
+              BEST
+            </span>
+          )}
+        </a>
+      ) : (
+        <div className="relative" style={{ paddingTop: '100%', background: '#1E1E1E' }}>
+          {!imgError && result.image_url ? (
+            <img
+              src={result.image_url}
+              alt={result.title}
+              onError={() => setImgError(true)}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Search size={24} color="#2E2E2E" />
+            </div>
+          )}
+          {result.is_best && (
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full"
+              style={{
+                background: 'rgba(46,204,113,0.15)',
+                border: '1px solid #2ECC71',
+                color: '#2ECC71',
+                fontSize: '9px',
+                fontFamily: 'DM Mono, monospace',
+                letterSpacing: '0.08em',
+              }}>
+              BEST
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Info */}
       <div className="p-3 flex flex-col flex-1">
@@ -175,7 +211,7 @@ function ProductCard({ result, currency, onSave }) {
 
         <button
           type="button"
-          onClick={() => onSave(result)}
+          onClick={() => onStash(result)}
           className="mt-2 w-full py-2 rounded-xl transition-opacity active:opacity-70"
           style={{
             background: 'rgba(232,101,43,0.12)',
@@ -195,7 +231,7 @@ function ProductCard({ result, currency, onSave }) {
 
 // ── Main page ─────────────────────────────────────────────
 
-export default function Discovery() {
+export default function Discovery({ onStash }) {
   const { user, profile } = useAuth();
   const { country_code = 'CA', currency = 'CAD' } = profile ?? {};
 
@@ -250,26 +286,12 @@ export default function Discovery() {
     inputRef.current?.focus();
   };
 
-  const handleSave = async (result) => {
+  const handleStash = (result) => {
     if (!user) {
       toastInfo('Sign in required', 'Create an account to stash products.');
       return;
     }
-    const { error } = await supabase.from('products').insert({
-      user_id:        user.id,
-      name:           result.title,
-      url:            result.product_url || null,
-      image_url:      result.image_url   || null,
-      store_name:     result.store       || null,
-      original_price: result.price,
-      current_price:  result.price,
-      lowest_price:   result.price,
-    });
-    if (error) {
-      toastInfo('Save failed', error.message);
-    } else {
-      toastSuccess('Stashed!', result.title);
-    }
+    if (onStash) onStash(result);
   };
 
   return (
@@ -381,7 +403,7 @@ export default function Discovery() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 pb-28">
                   {results.map((r, i) => (
-                    <ProductCard key={i} result={r} currency={currency} onSave={handleSave} />
+                    <ProductCard key={i} result={r} currency={currency} onStash={handleStash} />
                   ))}
                 </div>
               </>

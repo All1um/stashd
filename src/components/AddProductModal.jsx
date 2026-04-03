@@ -14,15 +14,17 @@ function GoldSpinner() {
   );
 }
 
-export default function AddProductModal({ onClose }) {
+export default function AddProductModal({ onClose, prefill = null }) {
   const { user } = useAuth();
 
   const [lists,        setLists]        = useState([]);
-  const [url,          setUrl]          = useState('');
+  const [url,          setUrl]          = useState(prefill?.url ?? '');
   const [scraping,     setScraping]     = useState(false);
   const [scrapeError,  setScrapeError]  = useState('');
   const [saving,       setSaving]       = useState(false);
-  const [preview,      setPreview]      = useState(null);
+  const [preview,      setPreview]      = useState(
+    prefill ? { name: prefill.name, price: prefill.price, store: prefill.store, image: prefill.image, crossStorePrices: [] } : null
+  );
   const [selectedList, setSelectedList] = useState(null);
   const [alertEnabled, setAlertEnabled] = useState(false);
   const [alertPrice,   setAlertPrice]   = useState('');

@@ -3,6 +3,7 @@ import { Plus, Pencil, Check, X } from 'lucide-react';
 import { toastSuccess } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import ProductImage from '../components/ProductImage';
 
 // ── Gold spinner ──────────────────────────────────────────
 
@@ -191,9 +192,13 @@ export default function Lists({ onListClick }) {
                     <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden mb-3"
                       style={{ height: '80px' }}>
                       {thumbs.length > 0 ? thumbs.map((p, i) => (
-                        p?.image_url
-                          ? <img key={i} src={p.image_url} alt="" className="w-full h-full object-cover" style={{ height: '38px' }} />
-                          : <div key={i} style={{ background: '#1E1E1E', height: '38px' }} />
+                        <ProductImage
+                          key={i}
+                          src={p?.image_url}
+                          alt=""
+                          size="sm"
+                          style={{ width: '100%', height: '38px', objectFit: 'cover' }}
+                        />
                       )) : (
                         <div className="col-span-2 flex items-center justify-center"
                           style={{ height: '80px', background: '#1E1E1E' }}>
